@@ -10,10 +10,10 @@ template getMaskOnes(n: int): uint64 =
   if n == 64: 0xFFFFFFFFFFFFFFFF'u64
   else: (1'u64 shl n) - 1
 
-proc newBitFileStream*(f: File): BitStream =
+proc newFileBitStream*(f: File): BitStream =
   BitStream(stream: newFileStream(f), buffer: 0, bitsLeft: 0)
 
-proc newBitFileStream*(filename: string; mode: FileMode = fmRead;
+proc newFileBitStream*(filename: string; mode: FileMode = fmRead;
                        bufSize: int = -1): BitStream =
   BitStream(stream: newFileStream(filename, mode, bufSize), buffer: 0,
             bitsLeft: 0)
