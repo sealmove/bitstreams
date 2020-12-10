@@ -13,10 +13,11 @@ template getMaskOnes(n: int): uint64 =
 proc newFileBitStream*(f: File): BitStream =
   BitStream(stream: newFileStream(f), buffer: 0, bitsLeft: 0)
 
-proc newFileBitStream*(filename: string; mode: FileMode = fmRead;
-                       bufSize: int = -1): BitStream =
-  BitStream(stream: newFileStream(filename, mode, bufSize), buffer: 0,
-            bitsLeft: 0)
+proc newFileBitStream*(f: string; mode = fmRead; size = -1): BitStream =
+  BitStream(stream: newFileStream(f, mode, size), buffer: 0, bitsLeft: 0)
+
+proc newStringBitStream*(s = ""): BitStream =
+  BitStream(stream: newStringStream(s), buffer: 0, bitsLeft: 0)
 
 proc close*(bs: BitStream) = close(bs.stream)
 proc atEnd*(bs: BitStream): bool = atEnd(bs.stream) and bs.bitsLeft == 0
