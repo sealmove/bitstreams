@@ -21,11 +21,13 @@ proc newStringBitStream*(s = ""): BitStream =
 
 proc close*(bs: BitStream) = close(bs.stream)
 proc atEnd*(bs: BitStream): bool = atEnd(bs.stream) and bs.bitsLeft == 0
-proc pos*(bs: BitStream): int = getPosition(bs.stream)
-proc seek*(bs: BitStream, n: int) = setPosition(bs.stream, n)
+proc getPosition*(bs: BitStream): int = getPosition(bs.stream)
+template pos*(bs: BitStream): int = getPosition(bs)
+proc setPosition*(bs: BitStream, n: int) = setPosition(bs.stream, n)
+template seek*(bs: BitStream, n: int) = setPosition(bs, n)
 proc skip*(bs: BitStream, n: int) = bs.seek(pos(bs) + n)
+proc readAll*(bs: BitStream): string = readAll(bs.stream)
 
-# Unaligned bit values
 proc alignToByte*(bs: BitStream) =
   bs.buffer = 0
   bs.bitsLeft = 0
@@ -230,5 +232,5 @@ template readAligned*(bs: BitStream; typ, endian: char; size: int) =
     raise newException(Defect, "Valid sizes are: 8, 16, 32, 64")
   if typ == 'f' and size notin {32, 64}:
     raise newException(Defect, "Valid sizes for floats are: 32, 64")
-  let p = ident("read" & typ & $size & endian & "e")
+  let p = ident("read" & typ & $size & (if size != 8: endian & "e" else: ""))
   result = quote do: `p`(bs)
