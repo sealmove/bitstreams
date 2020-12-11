@@ -232,3 +232,14 @@ template readAligned*(bs: BitStream; typ, endian: char; size: int) =
     raise newException(Defect, "Valid sizes for floats are: 32, 64")
   let p = ident("read" & typ & $size & (if size != 8: endian & "e" else: ""))
   result = quote do: `p`(bs)
+
+proc readStr*(bs: BitStream): string =
+  while true:
+    let c = readChar(bs.stream)
+    if c == '\0': break
+    result.add(c)
+
+proc readStr*(bs: BitStream, n: int): string =
+  if n mod 8 != 0:
+    raise newException(Defect, "String reads must be byte-aligned")
+  readStr(bs.stream, n div 8)
