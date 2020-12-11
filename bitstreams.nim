@@ -27,8 +27,8 @@ proc setPosition*(bs: BitStream, n: int) = setPosition(bs.stream, n)
 template seek*(bs: BitStream, n: int) = setPosition(bs, n)
 proc skip*(bs: BitStream, n: int) = bs.seek(pos(bs) + n)
 proc readAll*(bs: BitStream): string = readAll(bs.stream)
-
-proc alignToByte*(bs: BitStream) =
+proc isAligned*(bs: BitStream): bool = bs.bitsLeft == 0
+proc align*(bs: BitStream) =
   bs.buffer = 0
   bs.bitsLeft = 0
 
@@ -63,7 +63,6 @@ proc readBitsLe*(bs: BitStream, n: int): uint64 =
   bs.buffer = bs.buffer shr n
   dec(bs.bitsLeft, n)
 
-# Signed integer numbers
 proc readS8*(bs: BitStream): int8 = readInt8(bs.stream)
 
 when system.cpuEndian == bigEndian:
@@ -123,7 +122,6 @@ else:
   proc readS32Le*(bs: BitStream): int32 = readInt32(bs.stream)
   proc readS64Le*(bs: BitStream): int64 = readInt64(bs.stream)
 
-# Unsigned integer numbers
 proc readU8*(bs: BitStream): uint8 = readUint8(bs.stream)
 
 when system.cpuEndian == bigEndian:
