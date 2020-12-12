@@ -16,7 +16,7 @@ type
 
 ## Constructor & Modes
 Only the following constructor is provided:
-```
+```nim
 proc newFileBitStream*(f: string; mode = fmRead; size = -1): BitStream
 ```
 `fmWrite` and `fmAppend` are disallowed because when writing to a bitstream, reads on the underlying `Stream` object are necessary.
