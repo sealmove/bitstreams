@@ -207,12 +207,12 @@ proc readBitsBe*(bs: BitStream, n: int): uint64 =
     for i in 0 ..< bytesNeeded:
       bs.buffer = bs.buffer shl 8
       bs.buffer = bs.buffer or buf[i]
-      inc(bs.bitsLeft, 8)
+      bs.bitsLeft += 8
   let
     mask = getMaskOnes(n)
     shiftBits = bs.bitsLeft - n
   result = (bs.buffer shr shiftBits) and mask
-  dec(bs.bitsLeft, n)
+  bs.bitsLeft -= n
   bs.buffer = bs.buffer and getMaskOnes(bs.bitsLeft)
 
 proc readBitsLe*(bs: BitStream, n: int): uint64 =
@@ -223,11 +223,11 @@ proc readBitsLe*(bs: BitStream, n: int): uint64 =
     doAssert bs.stream.readData(addr(buf), bytesNeeded) == bytesNeeded
     for i in 0 ..< bytesNeeded:
       bs.buffer = bs.buffer or (uint64(buf[i]) shl bs.bitsLeft)
-      inc(bs.bitsLeft, 8)
+      bs.bitsLeft += 8
   let mask = getMaskOnes(n)
   result = bs.buffer and mask
   bs.buffer = bs.buffer shr n
-  dec(bs.bitsLeft, n)
+  bs.bitsLeft -= n
 
 proc readStr*(bs: BitStream): string =
   while true:
@@ -300,7 +300,7 @@ proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber) =
   bs.seek(pos)
   for i in 0 ..< bytes:
     shift -= 8
-    var
+    let
       mask = if shift > 0: getMaskOnes(bs.bitsLeft)
              else: getMaskOnes(bs.bitsLeft + shift) shl (-shift)
       shifted = if shift > 0: x shr shift else: x shl (-shift)
@@ -311,7 +311,24 @@ proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber) =
   bs.bitsLeft = -shift
 
 proc writeBitsLe*(bs: BitStream, n: int, x: SomeNumber) =
-  discard
+  let
+    shift = if bs.bitsLeft mod 8 != 0: (8 - bs.bitsLeft) else: 0
+    bits = shift + n
+    bytes = bits div 8 + (if bits mod 8 != 0: 1 else: 0)
+  var
+    x = uint64(x) shl shift # loses info XXX
+    buf = newSeq[byte](bytes)
+  bs.bitsLeft = bits
+  if shift > 0:
+    bs.skip(-1)
+    buf[0] = if bs.stream.atEnd: 0'u8 else: bs.readU8()
+    bs.skip(-1)
+  for i in 0 ..< bytes:
+    buf[i] = buf[i] or byte(x)
+    x = x shr 8
+    if bs.bitsLeft >= 8:
+      bs.bitsLeft -= 8
+  bs.stream.writeData(addr buf[0], bytes)
 
 proc writeStr*(bs: BitStream, s: string) =
   write(bs.stream, s)
