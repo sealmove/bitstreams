@@ -14,9 +14,6 @@ proc newFileBitStream*(f: string; mode = fmRead; size = -1): BitStream =
   if mode in {fmWrite, fmAppend}:
     raise newException(Defect, "This mode is not supported for bitstreams")
   result = BitStream(stream: newFileStream(f, mode, size), buffer: 0, bitsLeft: 0)
-  if mode != fmRead:
-    result.stream.write(0'u64)
-    result.stream.setPosition(0)
 
 proc newStringBitStream*(s = ""): BitStream =
   BitStream(stream: newStringStream(s), buffer: 0, bitsLeft: 0)
@@ -244,8 +241,8 @@ proc readStr*(bs: BitStream, n: int): string =
   readStr(bs.stream, n div 8)
 
 when system.cpuEndian == bigEndian:
-  proc writeBe*(bs: BitStream, x: SomeInteger) = write(bs.stream, x)
-  proc writeLe*(bs: BitStream, x: SomeInteger) =
+  proc writeBe*(bs: BitStream, x: SomeNumber) = write(bs.stream, x)
+  proc writeLe*(bs: BitStream, x: SomeNumber) =
     var x = x
     when sizeof(x) == 1:
       write(bs.stream, x)
@@ -262,7 +259,7 @@ when system.cpuEndian == bigEndian:
       swapEndian64(addr(swapped), addr(x))
       writeData(bs.stream, addr swapped, 8)
 else:
-  proc writeBe*(bs: BitStream, x: SomeInteger) =
+  proc writeBe*(bs: BitStream, x: SomeNumber) =
     var x = x
     when sizeof(x) == 1:
       write(bs.stream, x)
@@ -278,9 +275,9 @@ else:
       var swapped: array[8, byte]
       swapEndian64(addr(swapped), addr(x))
       writeData(bs.stream, addr swapped, 8)
-  proc writeLe*(bs: BitStream, x: SomeInteger) = write(bs.stream, x)
+  proc writeLe*(bs: BitStream, x: SomeNumber) = write(bs.stream, x)
 
-proc writeBits*(bs: BitStream, n: int, x: SomeInteger) =
+proc writeBits*(bs: BitStream, n: int, x: SomeNumber) =
   let x = uint64(x)
   var
     shift = n - bs.bitsLeft
@@ -296,10 +293,10 @@ proc writeBits*(bs: BitStream, n: int, x: SomeInteger) =
   var buf = newSeq[byte](bytes)
   if bytes > 0:
     bs.seek(pos)
-    buf[0] = bs.readU8()
+    buf[0] = if bs.stream.atEnd: 0'u8 else: bs.readU8()
   if bytes > 1:
     bs.seek(pos + (bytes - 1))
-    buf[bytes - 1] = bs.readU8()
+    buf[bytes - 1] = if bs.stream.atEnd: 0'u8 else: bs.readU8()
   bs.seek(pos)
   for i in 0 ..< bytes:
     shift -= 8
