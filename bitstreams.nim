@@ -1,4 +1,4 @@
-import streams, endians, macros
+import streams, endians, bitops, macros
 
 type
   BitStream* = ref object
@@ -277,7 +277,7 @@ else:
       writeData(bs.stream, addr swapped, 8)
   proc writeLe*(bs: BitStream, x: SomeNumber) = write(bs.stream, x)
 
-proc writeBits*(bs: BitStream, n: int, x: SomeNumber) =
+proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber) =
   let x = uint64(x)
   var
     shift = n - bs.bitsLeft
@@ -309,6 +309,9 @@ proc writeBits*(bs: BitStream, n: int, x: SomeNumber) =
       bs.bitsLeft = 8
   bs.stream.writeData(addr buf[0], bytes)
   bs.bitsLeft = -shift
+
+proc writeBitsLe*(bs: BitStream, n: int, x: SomeNumber) =
+  discard
 
 proc writeStr*(bs: BitStream, s: string) =
   write(bs.stream, s)
