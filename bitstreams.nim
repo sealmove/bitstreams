@@ -6,10 +6,6 @@ type
     buffer: uint64
     bitsLeft: int
 
-template getMaskOnes(n: int): uint64 =
-  if n == 64: 0xFFFFFFFFFFFFFFFF'u64
-  else: (1'u64 shl n) - 1
-
 proc newFileBitStream*(f: string; mode = fmRead; size = -1): BitStream =
   if mode in {fmWrite, fmAppend}:
     raise newException(Defect, "This mode is not supported for bitstreams")
@@ -208,12 +204,10 @@ proc readBitsBe*(bs: BitStream, n: int): uint64 =
       bs.buffer = bs.buffer shl 8
       bs.buffer = bs.buffer or buf[i]
       bs.bitsLeft += 8
-  let
-    mask = getMaskOnes(n)
-    shiftBits = bs.bitsLeft - n
-  result = (bs.buffer shr shiftBits) and mask
+  result = bs.buffer shr (bs.bitsLeft - n)
+  result.mask(0 ..< n)
   bs.bitsLeft -= n
-  bs.buffer = bs.buffer and getMaskOnes(bs.bitsLeft)
+  bs.buffer.mask(0 ..< bs.bitsLeft)
 
 proc readBitsLe*(bs: BitStream, n: int): uint64 =
   let bitsNeeded = n - bs.bitsLeft
@@ -224,8 +218,7 @@ proc readBitsLe*(bs: BitStream, n: int): uint64 =
     for i in 0 ..< bytesNeeded:
       bs.buffer = bs.buffer or (uint64(buf[i]) shl bs.bitsLeft)
       bs.bitsLeft += 8
-  let mask = getMaskOnes(n)
-  result = bs.buffer and mask
+  result = bs.buffer.masked(0 ..< n)
   bs.buffer = bs.buffer shr n
   bs.bitsLeft -= n
 
@@ -301,10 +294,10 @@ proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber) =
   for i in 0 ..< bytes:
     shift -= 8
     let
-      mask = if shift > 0: getMaskOnes(bs.bitsLeft)
-             else: getMaskOnes(bs.bitsLeft + shift) shl (-shift)
-      shifted = if shift > 0: x shr shift else: x shl (-shift)
-    buf[i] = byte((buf[i] and (mask xor 0xFF)) or (shifted and mask))
+      mask = if shift > 0: toMask[uint64](0 ..< bs.bitsLeft)
+             else: toMask[uint64](0 ..< bs.bitsLeft + shift) shl (-shift)
+      shifted = if shift > 0: x shr shift else: x shl (-shift) # loses info XXX
+    buf[i] = byte((buf[i] and (mask.flipMasked(0 ..< 8))) or (shifted and mask))
     if i == 0:
       bs.bitsLeft = 8
   bs.stream.writeData(addr buf[0], bytes)
