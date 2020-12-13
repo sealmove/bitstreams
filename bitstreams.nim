@@ -313,6 +313,8 @@ proc writeBitsLe*(bs: BitStream, n: int, x: SomeNumber) =
     buf = newSeq[byte](bytes)
   bs.bitsLeft = bits
   if shift > 0:
+    # the last written byte is partial, so we need to fetch it, modify it, and
+    # write it backread partially written byte
     bs.skip(-1)
     buf[0] = if bs.stream.atEnd: 0'u8 else: bs.readU8()
     bs.skip(-1)
@@ -325,4 +327,7 @@ proc writeBitsLe*(bs: BitStream, n: int, x: SomeNumber) =
 
 proc writeStr*(bs: BitStream, s: string) =
   write(bs.stream, s)
-  write(bs.stream, '\0')
+
+proc writeTermStr*(bs: BitStream, s: string, term = '\0') =
+  write(bs.stream, s)
+  write(bs.stream, term)
