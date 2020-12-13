@@ -331,3 +331,7 @@ proc writeStr*(bs: BitStream, s: string) =
 proc writeTermStr*(bs: BitStream, s: string, term = '\0') =
   write(bs.stream, s)
   write(bs.stream, term)
+
+proc writeZeroBytes*(bs: BitStream, n: int) =
+  var zeros = newSeq[byte](n)
+  bs.stream.writeData(addr zeros, n)
