@@ -156,15 +156,15 @@ when system.cpuEndian == bigEndian:
       write(bs.stream, x)
     elif sizeof(x) == 2:
       var swapped: array[2, byte]
-      swapEndian16(addr(swapped), addr(x))
+      swapEndian16(addr swapped, addr x)
       writeData(bs.stream, addr swapped, 2)
     elif sizeof(x) == 4:
       var swapped: array[4, byte]
-      swapEndian32(addr(swapped), addr(x))
+      swapEndian32(addr swapped, addr x)
       writeData(bs.stream, addr swapped, 4)
     elif sizeof(x) == 8:
       var swapped: array[8, byte]
-      swapEndian64(addr(swapped), addr(x))
+      swapEndian64(addr swapped, addr x)
       writeData(bs.stream, addr swapped, 8)
 else:
   proc writeBe*(bs: BitStream, x: SomeNumber) =
@@ -173,15 +173,15 @@ else:
       write(bs.stream, x)
     elif sizeof(x) == 2:
       var swapped: array[2, byte]
-      swapEndian16(addr(swapped), addr(x))
+      swapEndian16(addr swapped, addr x)
       writeData(bs.stream, addr swapped, 2)
     elif sizeof(x) == 4:
       var swapped: array[4, byte]
-      swapEndian32(addr(swapped), addr(x))
+      swapEndian32(addr swapped, addr x)
       writeData(bs.stream, addr swapped, 4)
     elif sizeof(x) == 8:
       var swapped: array[8, byte]
-      swapEndian64(addr(swapped), addr(x))
+      swapEndian64(addr swapped, addr x)
       writeData(bs.stream, addr swapped, 8)
   proc writeLe*(bs: BitStream, x: SomeNumber) = write(bs.stream, x)
 
