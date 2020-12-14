@@ -39,160 +39,75 @@ template readAligned*(bs: BitStream; typ, endian: char; size: int) =
   let p = ident("read" & typ & $size & (if size != 8: endian & "e" else: ""))
   result = quote do: `p`(bs)
 
-proc readS8*(bs: BitStream): int8 = readInt8(bs.stream)
-when system.cpuEndian == bigEndian:
-  proc readS16Be*(bs: BitStream): int16 = readInt16(bs.stream)
-  proc readS32Be*(bs: BitStream): int32 = readInt32(bs.stream)
-  proc readS64Be*(bs: BitStream): int64 = readInt64(bs.stream)
+proc readS8*(bs: BitStream): int8 =
+  readInt8(bs.stream)
 
-  proc readS16Le*(bs: BitStream): int16 =
-    var
-      bufferIn: array[2, byte]
-      bufferOut: array[2, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 2) == 2
-    swapEndian16(addr(bufferOut), addr(bufferIn))
-    result = cast[int16](bufferOut)
+proc readS16Be*(bs: BitStream): int16 =
+  var x = readInt16(bs.stream)
+  bigEndian16(addr result, addr x)
 
-  proc readS32Le*(bs: BitStream): int32 =
-    var
-      bufferIn: array[4, byte]
-      bufferOut: array[4, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 4) == 4
-    swapEndian32(addr(bufferOut), addr(bufferIn))
-    result = cast[int32](bufferOut)
+proc readS32Be*(bs: BitStream): int32 =
+  var x = readInt32(bs.stream)
+  bigEndian32(addr result, addr x)
 
-  proc readS64Le*(bs: BitStream): int64 =
-    var
-      bufferIn: array[8, byte]
-      bufferOut: array[8, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 8) == 8
-    swapEndian64(addr(bufferOut), addr(bufferIn))
-    result = cast[int64](bufferOut)
-else:
-  proc readS16Be*(bs: BitStream): int16 =
-    var
-      bufferIn: array[2, byte]
-      bufferOut: array[2, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 2) == 2
-    swapEndian16(addr(bufferOut), addr(bufferIn))
-    result = cast[int16](bufferOut)
+proc readS64Be*(bs: BitStream): int64 =
+  var x = readInt64(bs.stream)
+  bigEndian64(addr result, addr x)
 
-  proc readS32Be*(bs: BitStream): int32 =
-    var
-      bufferIn: array[4, byte]
-      bufferOut: array[4, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 4) == 4
-    swapEndian32(addr(bufferOut), addr(bufferIn))
-    result = cast[int32](bufferOut)
+proc readS16Le*(bs: BitStream): int16 =
+  var x = readInt16(bs.stream)
+  littleEndian16(addr result, addr x)
 
-  proc readS64Be*(bs: BitStream): int64 =
-    var
-      bufferIn: array[8, byte]
-      bufferOut: array[8, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 8) == 8
-    swapEndian64(addr(bufferOut), addr(bufferIn))
-    result = cast[int64](bufferOut)
+proc readS32Le*(bs: BitStream): int32 =
+  var x = readInt32(bs.stream)
+  littleEndian32(addr result, addr x)
 
-  proc readS16Le*(bs: BitStream): int16 = readInt16(bs.stream)
-  proc readS32Le*(bs: BitStream): int32 = readInt32(bs.stream)
-  proc readS64Le*(bs: BitStream): int64 = readInt64(bs.stream)
+proc readS64Le*(bs: BitStream): int64 =
+  var x = readInt64(bs.stream)
+  littleEndian64(addr result, addr x)
 
-proc readU8*(bs: BitStream): uint8 = readUint8(bs.stream)
-when system.cpuEndian == bigEndian:
-  proc readU16Be*(bs: BitStream): uint16 = readUint16(bs.stream)
-  proc readU32Be*(bs: BitStream): uint32 = readUint32(bs.stream)
-  proc readU64Be*(bs: BitStream): uint64 = readUint64(bs.stream)
+proc readU8*(bs: BitStream): uint8 =
+  readUint8(bs.stream)
 
-  proc readU16Le*(bs: BitStream): uint16 =
-    var
-      bufferIn: array[2, byte]
-      bufferOut: array[2, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 2) == 2
-    swapEndian16(addr(bufferOut), addr(bufferIn))
-    result = cast[uint16](bufferOut)
+proc readU16Be*(bs: BitStream): uint16 =
+  var x = readUint16(bs.stream)
+  bigEndian16(addr result, addr x)
 
-  proc readU32Le*(bs: BitStream): uint32 =
-    var
-      bufferIn: array[4, byte]
-      bufferOut: array[4, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 4) == 4
-    swapEndian32(addr(bufferOut), addr(bufferIn))
-    result = cast[uint32](bufferOut)
+proc readU32Be*(bs: BitStream): uint32 =
+  var x = readUint32(bs.stream)
+  bigEndian32(addr result, addr x)
 
-  proc readU64Le*(bs: BitStream): uint64 =
-    var
-      bufferIn: array[8, byte]
-      bufferOut: array[8, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 8) == 8
-    swapEndian64(addr(bufferOut), addr(bufferIn))
-    result = cast[uint64](bufferOut)
-else:
-  proc readU16Be*(bs: BitStream): uint16 =
-    var
-      bufferIn: array[2, byte]
-      bufferOut: array[2, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 2) == 2
-    swapEndian16(addr(bufferOut), addr(bufferIn))
-    result = cast[uint16](bufferOut)
+proc readU64Be*(bs: BitStream): uint64 =
+  var x = readUint64(bs.stream)
+  bigEndian64(addr result, addr x)
 
-  proc readU32Be*(bs: BitStream): uint32 =
-    var
-      bufferIn: array[4, byte]
-      bufferOut: array[4, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 4) == 4
-    swapEndian32(addr(bufferOut), addr(bufferIn))
-    result = cast[uint32](bufferOut)
+proc readU16Le*(bs: BitStream): uint16 =
+  var x = readUint16(bs.stream)
+  littleEndian16(addr result, addr x)
 
-  proc readU64Be*(bs: BitStream): uint64 =
-    var
-      bufferIn: array[8, byte]
-      bufferOut: array[8, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 8) == 8
-    swapEndian64(addr(bufferOut), addr(bufferIn))
-    result = cast[uint64](bufferOut)
+proc readU32Le*(bs: BitStream): uint32 =
+  var x = readUint32(bs.stream)
+  littleEndian32(addr result, addr x)
 
-  proc readU16Le*(bs: BitStream): uint16 = readUint16(bs.stream)
-  proc readU32Le*(bs: BitStream): uint32 = readUint32(bs.stream)
-  proc readU64Le*(bs: BitStream): uint64 = readUint64(bs.stream)
+proc readU64Le*(bs: BitStream): uint64 =
+  var x = readUint64(bs.stream)
+  littleEndian64(addr result, addr x)
 
-when system.cpuEndian == bigEndian:
-  proc readF32Be*(bs: BitStream): float32 = readFloat32(bs.stream)
-  proc readF64Be*(bs: BitStream): float64 = readFloat64(bs.stream)
+proc readF32Be*(bs: BitStream): float32 =
+  var x = readFloat32(bs.stream)
+  bigEndian32(addr result, addr x)
 
-  proc readF32Le*(bs: BitStream): float32 =
-    var
-      bufferIn: array[4, byte]
-      bufferOut: array[4, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 4) == 4
-    swapEndian32(addr(bufferOut), addr(bufferIn))
-    result = cast[float32](bufferOut)
+proc readF64Be*(bs: BitStream): float64 =
+  var x = readFloat64(bs.stream)
+  bigEndian64(addr result, addr x)
 
-  proc readF64Le*(bs: BitStream): float64 =
-    var
-      bufferIn: array[8, byte]
-      bufferOut: array[8, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 8) == 8
-    swapEndian64(addr(bufferOut), addr(bufferIn))
-    result = cast[float64](bufferOut)
-else:
-  proc readF32Be*(bs: BitStream): float32 =
-    var
-      bufferIn: array[4, byte]
-      bufferOut: array[4, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 4) == 4
-    swapEndian32(addr(bufferOut), addr(bufferIn))
-    result = cast[float32](bufferOut)
+proc readF32Le*(bs: BitStream): float32 =
+  var x = readFloat32(bs.stream)
+  littleEndian32(addr result, addr x)
 
-  proc readF64Be*(bs: BitStream): float64 =
-    var
-      bufferIn: array[8, byte]
-      bufferOut: array[8, byte]
-    doAssert bs.stream.readData(addr(bufferIn), 8) == 8
-    swapEndian64(addr(bufferOut), addr(bufferIn))
-    result = cast[float64](bufferOut)
-
-  proc readF32Le*(bs: BitStream): float32 = readFloat32(bs.stream)
-  proc readF64Le*(bs: BitStream): float64 = readFloat64(bs.stream)
+proc readF64Le*(bs: BitStream): float64 =
+  var x = readFloat64(bs.stream)
+  littleEndian64(addr result, addr x)
 
 proc readBitsBe*(bs: BitStream, n: int): uint64 =
   let bitsNeeded = n - bs.bitsLeft
