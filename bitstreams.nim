@@ -1,4 +1,4 @@
-import streams, endians, bitops, macros
+import streams, endians, bitops, algorithm, macros
 
 type
   BitStream* = ref object
@@ -109,12 +109,14 @@ proc readF64Le*(bs: BitStream): float64 =
   var x = readFloat64(bs.stream)
   littleEndian64(addr result, addr x)
 
-proc readBitsBe*(bs: BitStream, n: int): uint64 =
+proc readBitsBe*(bs: BitStream, n: int, endian = bigEndian): uint64 =
   let bitsNeeded = n - bs.bitsLeft
   if bitsNeeded > 0:
     var bytesNeeded = ((bitsNeeded - 1) div 8) + 1;
     var buf: array[8, byte]
-    doAssert bs.stream.readData(addr(buf), bytesNeeded) == bytesNeeded
+    doAssert bs.stream.readData(addr buf, bytesNeeded) == bytesNeeded
+    if endian != cpuEndian and n mod 8 == 0:
+      reverse(buf)
     for i in 0 ..< bytesNeeded:
       bs.buffer = bs.buffer shl 8
       bs.buffer = bs.buffer or buf[i]
@@ -124,12 +126,14 @@ proc readBitsBe*(bs: BitStream, n: int): uint64 =
   bs.bitsLeft -= n
   bs.buffer.mask(0 ..< bs.bitsLeft)
 
-proc readBitsLe*(bs: BitStream, n: int): uint64 =
+proc readBitsLe*(bs: BitStream, n: int, endian = bigEndian): uint64 =
   let bitsNeeded = n - bs.bitsLeft
   if bitsNeeded > 0:
     var bytesNeeded = ((bitsNeeded - 1) div 8) + 1;
     var buf: array[8, byte]
-    doAssert bs.stream.readData(addr(buf), bytesNeeded) == bytesNeeded
+    doAssert bs.stream.readData(addr buf, bytesNeeded) == bytesNeeded
+    if endian != cpuEndian and n mod 8 == 0:
+      reverse(buf)
     for i in 0 ..< bytesNeeded:
       bs.buffer = bs.buffer or (uint64(buf[i]) shl bs.bitsLeft)
       bs.bitsLeft += 8
@@ -185,8 +189,12 @@ else:
       writeData(bs.stream, addr swapped, 8)
   proc writeLe*(bs: BitStream, x: SomeNumber) = write(bs.stream, x)
 
-proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber) =
-  let x = uint64(x)
+proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber, endian = bigEndian) =
+  var x = uint64(x)
+  if endian != cpuEndian and n mod 8 == 0:
+    var tmp: uint64
+    swapEndian64(addr tmp, addr x)
+    x = tmp shl (64 - n)
   var
     shift = n - bs.bitsLeft
     bytes = if shift > 0: (shift div 8 + (if shift mod 8 != 0: 1 else: 0))
@@ -218,17 +226,21 @@ proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber) =
   bs.stream.writeData(addr buf[0], bytes)
   bs.bitsLeft = -shift
 
-proc writeBitsLe*(bs: BitStream, n: int, x: SomeNumber) =
+proc writeBitsLe*(bs: BitStream, n: int, x: SomeNumber, endian = bigEndian) =
   # for now it's assumed that data are written sequentially, which means this
   # proc will have to be modified to not override already written data at the
   # last byte
+  var x = uint64(x)
+  if endian != cpuEndian and n mod 8 == 0:
+    var tmp: uint64
+    swapEndian64(addr tmp, addr x)
+    x = tmp shl (64 - n)
   let
     shift = if bs.bitsLeft mod 8 != 0: (8 - bs.bitsLeft) else: 0
     bits = shift + n
     bytes = bits div 8 + (if bits mod 8 != 0: 1 else: 0)
-  var
-    x = uint64(x) shl shift
-    buf = newSeq[byte](bytes)
+  x = x shl shift
+  var buf = newSeq[byte](bytes)
   bs.bitsLeft = bits
   if shift > 0:
     # the last written byte is partial, so we need to fetch it, modify it, and
