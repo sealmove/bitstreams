@@ -296,7 +296,7 @@ proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber) =
     let
       mask = if shift > 0: toMask[uint64](0 ..< bs.bitsLeft)
              else: toMask[uint64](0 ..< bs.bitsLeft + shift) shl (-shift)
-      shifted = if shift > 0: x shr shift else: x shl (-shift) # loses info XXX
+      shifted = if shift > 0: x shr shift else: x shl (-shift)
     buf[i] = byte((buf[i] and (mask.flipMasked(0 ..< 8))) or (shifted and mask))
     if i == 0:
       bs.bitsLeft = 8
@@ -304,12 +304,15 @@ proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber) =
   bs.bitsLeft = -shift
 
 proc writeBitsLe*(bs: BitStream, n: int, x: SomeNumber) =
+  # for now it's assumed that data are written sequentially, which means this
+  # proc will have to be modified to not override already written data at the
+  # last byte
   let
     shift = if bs.bitsLeft mod 8 != 0: (8 - bs.bitsLeft) else: 0
     bits = shift + n
     bytes = bits div 8 + (if bits mod 8 != 0: 1 else: 0)
   var
-    x = uint64(x) shl shift # loses info XXX
+    x = uint64(x) shl shift
     buf = newSeq[byte](bytes)
   bs.bitsLeft = bits
   if shift > 0:
