@@ -23,7 +23,7 @@ template seek*(bs: BitStream, n: int) = setPosition(bs, n)
 proc skip*(bs: BitStream, n: int) = bs.seek(pos(bs) + n)
 proc readAll*(bs: BitStream): string = readAll(bs.stream)
 proc isAligned*(bs: BitStream): bool = bs.bitsLeft == 0
-proc align*(bs: BitStream) =
+proc resetBuffer*(bs: BitStream) =
   bs.buffer = 0
   bs.bitsLeft = 0
 
