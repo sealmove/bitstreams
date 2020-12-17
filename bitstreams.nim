@@ -271,10 +271,10 @@ proc writeZeroBytes*(bs: BitStream, n: int) =
   var zeros = newSeq[byte](n)
   bs.stream.writeData(addr zeros, n)
 
-proc writeFromSubstream*(s, ss: BitStream) =
+proc writeFromSubstream*(s, ss: BitStream; n: int) =
   if not s.isAligned:
     raise newException(Defect, "Cannot create substream out of unaligned stream")
-  s.writeStr(ss.readStr)
+  s.writeStr(ss.readStr(8*n))
 
 proc newPaddedBitStream*(padding: int): BitStream =
   result = BitStream(stream: newStringStream(), buffer: 0, bitsLeft: 0)
