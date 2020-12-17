@@ -152,7 +152,12 @@ proc readStr*(bs: BitStream, n: int): string =
     raise newException(Defect, "String reads must be byte-aligned")
   readStr(bs.stream, n div 8)
 
-when system.cpuEndian == bigEndian:
+proc createSubstream*(bs: BitStream, n: int): BitStream =
+  if not bs.isAligned:
+    raise newException(Defect, "Cannot create substream out of unaligned stream")
+  newStringBitStream(readStr(bs.stream, n))
+
+when cpuEndian == bigEndian:
   proc writeBe*(bs: BitStream, x: SomeNumber) = write(bs.stream, x)
   proc writeLe*(bs: BitStream, x: SomeNumber) =
     var x = x
@@ -265,3 +270,13 @@ proc writeTermStr*(bs: BitStream, s: string, term = '\0') =
 proc writeZeroBytes*(bs: BitStream, n: int) =
   var zeros = newSeq[byte](n)
   bs.stream.writeData(addr zeros, n)
+
+proc writeFromSubstream*(s, ss: BitStream) =
+  if not s.isAligned:
+    raise newException(Defect, "Cannot create substream out of unaligned stream")
+  s.writeStr(ss.readStr)
+
+proc newPaddedBitStream*(padding: int): BitStream =
+  result = BitStream(stream: newStringStream(), buffer: 0, bitsLeft: 0)
+  result.writeZeroBytes(padding)
+  result.seek(0)
