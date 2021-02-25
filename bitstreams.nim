@@ -246,10 +246,10 @@ proc writeBitsLe*(bs: BitStream, n: int, x: SomeNumber, endian = bigEndian) =
     bytes = bits div 8 + (if bits mod 8 != 0: 1 else: 0)
   x = x shl shift
   var buf = newSeq[byte](bytes)
-  bs.bitsLeft = bits
+  bs.bitsLeft = 8 - (bits mod 8)
   if shift > 0:
     # the last written byte is partial, so we need to fetch it, modify it, and
-    # write it backread partially written byte
+    # write it back
     bs.skip(-1)
     buf[0] = if bs.stream.atEnd: 0'u8 else: bs.readU8()
     bs.skip(-1)
@@ -273,7 +273,11 @@ proc writeZeroBytes*(bs: BitStream, n: int) =
 
 proc writeFromSubstream*(s, ss: BitStream; n: int) =
   if not s.isAligned:
-    raise newException(Defect, "Cannot create substream out of unaligned stream")
+    raise newException(Defect,
+      "Cannot write from a substream to an unaligned stream")
+  if not ss.isAligned:
+    raise newException(Defect,
+      "Cannot write an unaligned substream")
   s.writeStr(ss.readStr(8*n))
 
 proc newPaddedBitStream*(padding: int): BitStream =
