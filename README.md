@@ -15,8 +15,9 @@ type
 - if they are less than the user requests, data are read from `stream` into `buffer`
 
 ## Constructor & Modes
-Only the following constructor is provided:
+Two constructors are provided:
 ```nim
 proc newFileBitStream*(f: string; mode = fmRead; size = -1): BitStream
+proc newStringBitStream*(s = ""): BitStream
 ```
 `fmWrite` and `fmAppend` are disallowed because when writing to a bitstream, reads on the underlying `Stream` object are necessary.
