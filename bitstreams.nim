@@ -268,8 +268,8 @@ proc writeTermStr*(bs: BitStream, s: string, term = '\0') =
   write(bs.stream, term)
 
 proc writeZeroBytes*(bs: BitStream, n: int) =
-  var zeros = newSeq[byte](n)
-  bs.stream.writeData(addr zeros, n)
+  for i in 0 ..< n:
+    bs.stream.write(0'u8)
 
 proc writeFromSubstream*(s, ss: BitStream; n: int) =
   if not s.isAligned:
