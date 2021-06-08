@@ -116,11 +116,15 @@ proc readBitsBe*(bs: BitStream, n: int, endian = bigEndian): uint64 =
     var buf: array[8, byte]
     doAssert bs.stream.readData(addr buf, bytesNeeded) == bytesNeeded
     if endian != cpuEndian and n mod 8 == 0:
-      reverse(buf)
-    for i in 0 ..< bytesNeeded:
-      bs.buffer = bs.buffer shl 8
-      bs.buffer = bs.buffer or buf[i]
-      bs.bitsLeft += 8
+      for i in countdown(bytesNeeded - 1, 0):
+        bs.buffer = bs.buffer shl 8
+        bs.buffer = bs.buffer or buf[i]
+        bs.bitsLeft += 8
+    else:
+      for i in 0 ..< bytesNeeded:
+        bs.buffer = bs.buffer shl 8
+        bs.buffer = bs.buffer or buf[i]
+        bs.bitsLeft += 8
   result = bs.buffer shr (bs.bitsLeft - n)
   result.mask(0 ..< n)
   bs.bitsLeft -= n
@@ -133,10 +137,13 @@ proc readBitsLe*(bs: BitStream, n: int, endian = bigEndian): uint64 =
     var buf: array[8, byte]
     doAssert bs.stream.readData(addr buf, bytesNeeded) == bytesNeeded
     if endian != cpuEndian and n mod 8 == 0:
-      reverse(buf)
-    for i in 0 ..< bytesNeeded:
-      bs.buffer = bs.buffer or (uint64(buf[i]) shl bs.bitsLeft)
-      bs.bitsLeft += 8
+      for i in countdown(bytesNeeded - 1, 0):
+        bs.buffer = bs.buffer or (uint64(buf[i]) shl bs.bitsLeft)
+        bs.bitsLeft += 8
+    else:
+      for i in 0 ..< bytesNeeded:
+        bs.buffer = bs.buffer or (uint64(buf[i]) shl bs.bitsLeft)
+        bs.bitsLeft += 8
   result = bs.buffer.masked(0 ..< n)
   bs.buffer = bs.buffer shr n
   bs.bitsLeft -= n
