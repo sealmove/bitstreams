@@ -206,7 +206,7 @@ proc writeBitsBe*(bs: BitStream, n: int, x: SomeNumber, endian = bigEndian) =
   if endian != cpuEndian and n mod 8 == 0:
     var tmp: uint64
     swapEndian64(addr tmp, addr x)
-    x = tmp shl (64 - n)
+    x = tmp shr (64 - n)
   var
     shift = n - bs.bitsLeft
     bytes = if shift > 0: (shift div 8 + (if shift mod 8 != 0: 1 else: 0))
